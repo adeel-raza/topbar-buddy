@@ -1,0 +1,120 @@
+.sb-preview-container-wrapper {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #fff;
+    margin-bottom: 20px;
+}
+
+.sb-preview-container {
+    margin-bottom: 0;
+    border: none;
+    border-radius: 0;
+    overflow: visible;
+    background: transparent;
+}
+
+/* Save button container inside preview area */
+.sb-preview-save-button {
+    margin-top: 0;
+    padding: 15px 20px;
+    text-align: center;
+    border-top: 1px solid #ddd;
+    background: #f8f9fa;
+}
+
+.sb-preview-header {
+    background: #f8f9fa;
+    padding: 10px 15px;
+    border-bottom: 1px solid #ddd;
+}
+
+.sb-preview-header h4 {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: #495057;
+}
+
+.sb-preview-wrapper {
+    z-index: 1;
+    padding: 15px;
+    background: #f8f9fa;
+    min-height: 40px;
+    /* Ensure banner is visible above wrapper background */
+    position: relative;
+}
+
+.sb-preview-banner {
+    z-index: 99;
+    width: 100%;
+    text-align: center;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    /* Ensure preview shows banner styles */
+    display: block !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    margin: 0;
+    padding: 0;
+    border: none;
+}
+
+/* Ensure preview banner inherits frontend banner styles */
+.sb-preview-wrapper .topbar-buddy,
+.sb-preview-wrapper .topbar-buddy[data-preview="true"],
+body.wp-admin .topbar-buddy[data-preview="true"] {
+    /* Frontend CSS will apply, but ensure visibility */
+    display: block !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+.sb-preview-wrapper .topbar-buddy-text {
+    /* Frontend CSS will apply */
+    display: block !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+.sb-preview-text {
+    font-weight: 700;
+    padding: 12px 20px;
+    position: relative;
+    /* Ensure text is visible */
+    color: inherit;
+}
+
+.sb-preview-text a {
+    text-decoration: underline;
+}
+
+/* Override absolute positioning for buttons in preview - show inline */
+.sb-preview-text button {
+    display: inline-block !important;
+    position: static !important;
+    transform: none !important;
+    right: auto !important;
+    top: auto !important;
+    border: none !important;
+    background-color: transparent !important;
+    padding: 0 5px !important;
+    margin: 0 10px !important;
+    font-size: 16px !important;
+    cursor: pointer !important;
+    color: #ffffff !important;
+    vertical-align: baseline !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    line-height: 1 !important;
+}
+
+/* Sticky preview styles */
+.sb-preview-sticky {
+    border-radius: 8px;
+    transition: box-shadow 0.2s ease;
+}
+
+.sb-preview-placeholder {
+    background: transparent;
+}

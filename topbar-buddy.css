@@ -1,0 +1,81 @@
+.topbar-buddy,
+.topbar-buddy_2,
+.topbar-buddy_3,
+.topbar-buddy_4,
+.topbar-buddy_5 {
+  width: 100%;
+  text-align: center;
+  position: relative;
+  display: block;
+  opacity: 1;
+  transition: opacity 0.15s ease-in;
+  /* Default colors - will be overridden by inline styles if set */
+  background-color: #000000;
+  color: #ffffff;
+}
+
+/* Banners created by PHP (wp_body_open) show immediately */
+.topbar-buddy[data-created-by="php"] {
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+/* Prevent flash of unstyled content - hide JS-created banners until JS confirms visibility */
+/* Exclude admin pages and preview banners from this rule */
+body:not(.topbar-buddy-loaded):not(.wp-admin) .topbar-buddy:not([data-created-by="php"]):not([data-preview="true"]) {
+  opacity: 0;
+  visibility: hidden;
+}
+
+/* Show banner when body has topbar-buddy-loaded class */
+body.topbar-buddy-loaded .topbar-buddy:not([data-created-by="php"]) {
+  opacity: 1 !important;
+  visibility: visible !important;
+  display: block !important;
+}
+
+/* Always show preview banners in admin */
+body.wp-admin .topbar-buddy[data-preview="true"],
+.topbar-buddy[data-preview="true"] {
+  opacity: 1 !important;
+  visibility: visible !important;
+  display: block !important;
+}
+
+.topbar-buddy .topbar-buddy-text,
+.topbar-buddy_2 .topbar-buddy-text_2,
+.topbar-buddy_3 .topbar-buddy-text_3,
+.topbar-buddy_4 .topbar-buddy-text_4,
+.topbar-buddy_5 .topbar-buddy-text_5 {
+  font-weight: 700;
+  padding: 10px 20px;
+  position: relative;
+  color: #ffffff;
+}
+
+.topbar-buddy .topbar-buddy-text a,
+.topbar-buddy_2 .topbar-buddy-text_2 a,
+.topbar-buddy_3 .topbar-buddy-text_3 a,
+.topbar-buddy_4 .topbar-buddy-text_4 a,
+.topbar-buddy_5 .topbar-buddy-text_5 a {
+  color: #f16521;
+}
+
+.topbar-buddy .topbar-buddy-button,
+.topbar-buddy_2 .topbar-buddy-button_2,
+.topbar-buddy_3 .topbar-buddy-button_3,
+.topbar-buddy_4 .topbar-buddy-button_4,
+.topbar-buddy_5 .topbar-buddy-button_5 {
+  border: none;
+  background-color: transparent;
+  padding: 0 5px;
+  margin: 0 10px;
+  text-align: center;
+  text-decoration: none;
+  position: absolute;
+  transform: translate(0%, -50%);
+  right: 0;
+  top: 50%;
+  font-size: 16px;
+  cursor: pointer;
+}
