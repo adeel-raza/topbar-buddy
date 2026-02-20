@@ -12,7 +12,6 @@ namespace ElearningEvolve\TopBarBuddy;
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
-
 /**
  * Main plugin class.
  */
@@ -24,6 +23,14 @@ class Plugin {
 	 * @var string
 	 */
 	const VERSION = EEAB_VERSION;
+
+	/**
+	 * Whether the banner was already output (e.g. via wp_body_open).
+	 * Used to avoid duplicate output and to drive wp_footer fallback for themes that don't call wp_body_open (e.g. Divi).
+	 *
+	 * @var bool
+	 */
+	private $banner_rendered = false;
 
 	/**
 	 * Initialize the plugin.
@@ -43,6 +50,10 @@ class Plugin {
 		// Enqueue scripts with high priority to load after theme/Elementor
 		\add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_scripts' ), 999 );
 		\add_action( 'wp_body_open', array( $this, 'wp_body_open_banner' ) );
+		// Divi-specific: runs FIRST (priority 0) - outputs banner and moves it inside #page-container
+		\add_action( 'wp_footer', array( $this, 'divi_banner_footer' ), 0 );
+		// Generic fallback: runs AFTER Divi (priority 2) - only if banner not already rendered
+		\add_action( 'wp_footer', array( $this, 'fallback_banner_wp_footer' ), 2 );
 		\add_action( 'wp_footer', array( $this, 'prevent_css_removal' ) );
 		\add_action( 'admin_menu', array( $this, 'admin_menu' ) );
 		\add_action( 'admin_init', array( $this, 'register_settings' ) );
@@ -321,6 +332,14 @@ class Plugin {
 		// Check if disabled on posts.
 		$disabled_on_posts = $this->is_disabled_on_posts( $banner_id ) && $this->is_current_page_a_post();
 
+		// Check if disabled on homepage (uses special "home" identifier).
+		// Use both is_front_page() and is_home() to cover all homepage scenarios.
+		$disabled_on_homepage = false;
+		$is_homepage = \is_front_page() || \is_home();
+		if ( ! empty( $disabled_pages ) && in_array( 'home', $disabled_pages, true ) && $is_homepage ) {
+			$disabled_on_homepage = true;
+		}
+
 		// Check if disabled on specific page IDs.
 		// Convert both to strings for comparison since disabled_pages_array stores strings.
 		$disabled_on_page = false;
@@ -335,6 +354,7 @@ class Plugin {
 
 		$disabled = (
 			$disabled_on_page
+			|| $disabled_on_homepage
 			|| $disabled_on_posts
 			|| $disabled_on_path
 			|| $removed_before
@@ -450,10 +470,6 @@ class Plugin {
 				'hide_topbar_buddy'                => $eeab_hide_banner,
 				'topbar_buddy_prepend_element'     => \get_option( 'topbar_buddy_prepend_element' . $banner_id ),
 				'topbar_buddy_position'            => \get_option( 'topbar_buddy_position' . $banner_id ),
-				'eeab_header_margin'                     => $i === 1 ? \get_option( 'eeab_header_margin' . $banner_id ) : '',
-				'eeab_header_padding'                    => $i === 1 ? \get_option( 'eeab_header_padding' . $banner_id ) : '',
-				'wp_body_open_enabled'             => $i === 1 ? \get_option( 'eeab_wp_body_open_enabled' . $banner_id ) : '',
-				'wp_body_open'                     => function_exists( 'wp_body_open' ),
 				'topbar_buddy_z_index'            => \get_option( 'topbar_buddy_z_index' . $banner_id ),
 				'topbar_buddy_text'                => $banner_text,
 				'disabled_on_current_page'         => $disabled_on_current_page,
@@ -509,12 +525,26 @@ class Plugin {
 	}
 
 	/**
-	 * Output banner using wp_body_open hook.
+	 * Whether the current theme is Divi (or a Divi child).
 	 *
-	 * @since 1.0.0
+	 * @since 1.1.0
+	 * @return bool
 	 */
-	public function wp_body_open_banner() {
-		if ( ! function_exists( 'wp_body_open' ) ) {
+	private function is_divi_theme() {
+		return ( defined( 'ET_CORE_VERSION' ) || \get_template() === 'Divi' );
+	}
+
+	/**
+	 * Output banner for Divi theme via wp_footer, then move it BEFORE #main-header.
+	 * This places the banner exactly like Divi's #top-header (secondary menu bar):
+	 * - Inside #page-container
+	 * - BEFORE #main-header
+	 * - Position: relative (in document flow)
+	 *
+	 * @since 1.1.0
+	 */
+	public function divi_banner_footer() {
+		if ( ! $this->is_divi_theme() || $this->banner_rendered ) {
 			return;
 		}
 
@@ -525,18 +555,81 @@ class Plugin {
 		$banner_text = \get_option( 'topbar_buddy_text' . $banner_id );
 		$eeab_hide_banner = \get_option( 'eeab_hide_banner' . $banner_id );
 
-		// Match original plugin: only check disabled_on_current_page and cookie, not eeab_hide_banner
-		// (eeab_hide_banner is handled by setting text to empty in enqueue_scripts)
+		if ( $disabled_on_current_page || $closed_cookie || empty( $banner_text ) || $eeab_hide_banner === 'yes' ) {
+			return;
+		}
+
+		$this->banner_rendered = true;
+		$close_button = $close_button_enabled ? '<button id="topbar-buddy-close-button' . \esc_attr( $banner_id ) . '" class="topbar-buddy-button' . \esc_attr( $banner_id ) . '">&#x2715;</button>' : '';
+
+		$bid = 'topbar-buddy' . \esc_js( $banner_id );
+		?>
+		<!-- TopBar Buddy Banner for Divi (same structure as #top-header) -->
+		<div id="topbar-buddy-divi-wrapper" style="display:none;">
+			<div id="<?php echo esc_attr( $bid ); ?>" class="topbar-buddy<?php echo esc_attr( $banner_id ); ?> topbar-buddy-divi" data-created-by="php">
+				<div class="topbar-buddy-text<?php echo esc_attr( $banner_id ); ?>">
+					<span><?php echo wp_kses_post( $banner_text ); ?></span>
+					<?php echo wp_kses( $close_button, array( 'button' => array( 'id' => array(), 'class' => array() ) ) ); ?>
+				</div>
+			</div>
+		</div>
+		<script>
+		(function() {
+			var wrapper = document.getElementById('topbar-buddy-divi-wrapper');
+			var banner = document.getElementById('<?php echo $bid; ?>');
+			var mainHeader = document.getElementById('main-header');
+			var topHeader = document.getElementById('top-header');
+			
+			if (banner && mainHeader) {
+				// Insert banner exactly like #top-header: inside #page-container, before #main-header
+				if (topHeader && topHeader.parentNode) {
+					// If Divi's secondary menu exists, insert our banner after it
+					topHeader.parentNode.insertBefore(banner, topHeader.nextSibling);
+				} else {
+					// Otherwise insert before #main-header
+					mainHeader.parentNode.insertBefore(banner, mainHeader);
+				}
+				banner.style.display = 'block';
+				document.body.classList.add('topbar-buddy-loaded');
+			}
+			// Remove empty wrapper
+			if (wrapper && wrapper.parentNode) {
+				wrapper.parentNode.removeChild(wrapper);
+			}
+		})();
+		</script>
+		<?php
+	}
+
+	/**
+	 * Output banner using wp_body_open hook.
+	 *
+	 * @since 1.0.0
+	 */
+	public function wp_body_open_banner() {
+		if ( ! function_exists( 'wp_body_open' ) ) {
+			return;
+		}
+		// Divi does not reliably show wp_body_open content for non-admin users; use footer fallback only.
+		if ( $this->is_divi_theme() ) {
+			return;
+		}
+
+		$banner_id = $this->get_banner_id( 1 );
+		$disabled_on_current_page = $this->is_disabled_on_current_page( $banner_id );
+		$close_button_enabled = ! empty( \get_option( 'eeab_close_button_enabled' . $banner_id ) );
+		$closed_cookie = $close_button_enabled && isset( $_COOKIE[ 'simplebannerclosed' . $banner_id ] );
+		$banner_text = \get_option( 'topbar_buddy_text' . $banner_id );
+		$eeab_hide_banner = \get_option( 'eeab_hide_banner' . $banner_id );
+
 		if ( ! $disabled_on_current_page && ! $closed_cookie && ! empty( $banner_text ) && $eeab_hide_banner !== 'yes' ) {
+			$this->banner_rendered = true;
 			$close_button = $close_button_enabled ? '<button id="topbar-buddy-close-button' . \esc_attr( $banner_id ) . '" class="topbar-buddy-button' . \esc_attr( $banner_id ) . '">&#x2715;</button>' : '';
-			// Add data attribute so JS knows this was created by PHP
-			// Use wp_kses_post to allow rich HTML content (already sanitized on save)
 			echo '<div id="topbar-buddy' . \esc_attr( $banner_id ) . '" class="topbar-buddy' . \esc_attr( $banner_id ) . '" data-created-by="php"><div class="topbar-buddy-text' . \esc_attr( $banner_id ) . '"><span>' 
 				. \wp_kses_post( $banner_text ) 
 				. '</span>' 
 				. wp_kses( $close_button, array( 'button' => array( 'id' => array(), 'class' => array() ) ) ) 
 				. '</div></div>';
-			// Add script to mark banner as loaded immediately to prevent flash and scroll into view if needed
 			$inline_script = '(function() {
 				document.body.classList.add("topbar-buddy-loaded");
 				// Scroll banner into view if user is scrolled down
@@ -559,6 +652,41 @@ class Plugin {
 			})();';
 			\wp_add_inline_script( 'eeab-script', $inline_script );
 		}
+	}
+
+	/**
+	 * Fallback: output banner at start of wp_footer when theme does not call wp_body_open (e.g. Divi).
+	 * Banner is output in footer then moved to the top of body via inline script so it displays correctly.
+	 *
+	 * @since 1.0.0
+	 */
+	public function fallback_banner_wp_footer() {
+		if ( $this->banner_rendered ) {
+			return;
+		}
+
+		$banner_id = $this->get_banner_id( 1 );
+		$disabled_on_current_page = $this->is_disabled_on_current_page( $banner_id );
+		$close_button_enabled = ! empty( \get_option( 'eeab_close_button_enabled' . $banner_id ) );
+		$closed_cookie = $close_button_enabled && isset( $_COOKIE[ 'simplebannerclosed' . $banner_id ] );
+		$banner_text = \get_option( 'topbar_buddy_text' . $banner_id );
+		$eeab_hide_banner = \get_option( 'eeab_hide_banner' . $banner_id );
+
+		if ( $disabled_on_current_page || $closed_cookie || empty( $banner_text ) || $eeab_hide_banner === 'yes' ) {
+			return;
+		}
+
+		$this->banner_rendered = true;
+		$close_button = $close_button_enabled ? '<button id="topbar-buddy-close-button' . \esc_attr( $banner_id ) . '" class="topbar-buddy-button' . \esc_attr( $banner_id ) . '">&#x2715;</button>' : '';
+		$banner_html = '<div id="topbar-buddy' . \esc_attr( $banner_id ) . '" class="topbar-buddy' . \esc_attr( $banner_id ) . '" data-created-by="php" data-topbar-fallback="footer" style="position:fixed;top:0;left:0;right:0;z-index:999999;display:block !important;visibility:visible !important;opacity:1 !important"><div class="topbar-buddy-text' . \esc_attr( $banner_id ) . '"><span>'
+			. \wp_kses_post( $banner_text )
+			. '</span>'
+			. wp_kses( $close_button, array( 'button' => array( 'id' => array(), 'class' => array() ) ) )
+			. '</div></div>';
+
+		$bid = 'topbar-buddy' . \esc_js( $banner_id );
+		echo $banner_html;
+		echo '<script>(function(){ var b = document.getElementById("' . $bid . '"); if (b && b.parentNode && document.body) { document.body.insertBefore(b, document.body.firstChild); document.body.classList.add("topbar-buddy-loaded"); } })();</script>';
 	}
 
 	/**
@@ -587,14 +715,6 @@ class Plugin {
 
 			if ( $banner_is_disabled || $closed_cookie ) {
 				$inline_css .= 'body .topbar-buddy' . \esc_attr( $banner_id ) . '{display:none;}';
-			}
-
-			if ( $i === 1 && ! $banner_is_disabled && ! $closed_cookie && \get_option( 'eeab_header_margin' . $banner_id ) !== '' ) {
-				$inline_css .= 'header{margin-top:' . \esc_attr( \get_option( 'eeab_header_margin' . $banner_id ) ) . ';}';
-			}
-
-			if ( $i === 1 && ! $banner_is_disabled && ! $closed_cookie && \get_option( 'eeab_header_padding' . $banner_id ) !== '' ) {
-				$inline_css .= 'header{padding-top:' . \esc_attr( \get_option( 'eeab_header_padding' . $banner_id ) ) . ';}';
 			}
 
 			$position = \get_option( 'topbar_buddy_position' . $banner_id );
@@ -792,6 +912,120 @@ class Plugin {
 	}
 
 	/**
+	 * Methodof All Registers
+	 */
+	public function sanitize_disabled_paths( $value ) {
+
+    if ( empty( $value ) ) {
+        return '';
+    }
+
+    // Sanitize full textarea first
+    $value = sanitize_textarea_field( $value );
+
+    $paths = explode( ',', $value );
+    $clean = array();
+
+    foreach ( $paths as $path ) {
+        $path = trim( $path );
+
+        // Allow only safe URL path characters + wildcard *
+        if ( preg_match( '#^/?[A-Za-z0-9._~\-/%*]*$#', $path ) ) {
+            $clean[] = $path;
+        }
+    }
+
+    return implode( ',', $clean );
+    }
+
+	public function sanitize_date( $value ) {
+    $value = sanitize_text_field( $value );
+
+    $timestamp = strtotime( $value );
+    if ( $timestamp === false ) {
+        return '';
+    }
+
+    return date( 'Y-m-d H:i:s', $timestamp ); // normalized format
+    }
+
+	public function sanitize_days_or_session( $value ) {
+    $value = sanitize_text_field( $value );
+
+    if ( strtolower( $value ) === 'session' ) {
+        return 'session';
+    }
+
+    $int_val = absint( $value ); // ensures positive integer
+    return $int_val > 0 ? $int_val : 0;
+    }
+
+	public function sanitize_css_length( $value ) {
+		$value = sanitize_text_field( $value );
+
+		if ( empty( $value ) ) {
+			return '';
+		}
+
+		$parts = preg_split( '/\s+/', trim( $value ) );
+
+		if ( count( $parts ) > 4 ) {
+			return '';
+		}
+
+		$clean = array();
+		foreach ( $parts as $part ) {
+			if ( preg_match( '/^\d+(\.\d+)?(px|em|rem|%|vh|vw)$/', $part ) ) {
+				$clean[] = $part;
+			} elseif ( preg_match( '/^\d+(\.\d+)?$/', $part ) ) {
+				// Plain number: treat as px (e.g. "30" or "40" for header margin/padding).
+				$clean[] = $part . 'px';
+			} else {
+				return '';
+			}
+		}
+
+		return implode( ' ', $clean );
+	}
+
+
+	
+	public function sanitize_selector( $value ) {
+    $value = sanitize_text_field( $value );
+
+    // Allow letters, numbers, -, _, #, .
+    if ( preg_match( '/^[a-zA-Z0-9\-\_\#\.]+$/', $value ) ) {
+        return $value;
+    }
+    return '';
+    }
+
+	public function sanitize_font_size( $value ) {
+    $value = sanitize_text_field( $value );
+
+    // Allow numbers with common CSS units
+    if ( preg_match( '/^\d+(\.\d+)?(px|em|rem|%)$/', $value ) ) {
+        return $value;
+    }
+
+    return ''; // invalid values become empty
+    }
+
+	public function sanitize_link_color( $value ) {
+    // Returns a valid 3- or 6-digit hex color or empty string if invalid
+    return sanitize_hex_color( $value );
+    }
+
+	
+
+	
+
+
+
+
+
+
+	/**
 	 * Register settings.
 	 *
 	 * @since 1.0.0
@@ -809,31 +1043,8 @@ class Plugin {
 			'eeab_settings_group',
 			'topbar_buddy_clear_cache',
 			array(
-				'sanitize_callback' => array( $this, 'sanitize_nohtml' ),
-			)
-		);
-
-		\register_setting(
-			'eeab_settings_group',
-			'eeab_header_margin',
-			array(
-				'sanitize_callback' => array( $this, 'sanitize_nohtml' ),
-			)
-		);
-
-		\register_setting(
-			'eeab_settings_group',
-			'eeab_header_padding',
-			array(
-				'sanitize_callback' => array( $this, 'sanitize_nohtml' ),
-			)
-		);
-
-		\register_setting(
-			'eeab_settings_group',
-			'eeab_wp_body_open_enabled',
-			array(
-				'sanitize_callback' => array( $this, 'sanitize_nohtml' ),
+				'type'              => 'integer',
+				'sanitize_callback' => array( $this, 'sanitize_checkbox' ),
 			)
 		);
 
@@ -860,7 +1071,8 @@ class Plugin {
 				'eeab_settings_group',
 				'topbar_buddy_font_size' . $banner_id,
 				array(
-					'sanitize_callback' => array( $this, 'sanitize_nohtml' ),
+					'type'              => 'string',
+                    'sanitize_callback' => array( $this, 'sanitize_font_size' ),
 				)
 			);
 
@@ -876,7 +1088,8 @@ class Plugin {
 				'eeab_settings_group',
 				'topbar_buddy_text_color' . $banner_id,
 				array(
-					'sanitize_callback' => array( $this, 'sanitize_color' ),
+					'type'              => 'string',
+					'sanitize_callback' => 'sanitize_hex_color',
 				)
 			);
 
@@ -884,9 +1097,11 @@ class Plugin {
 				'eeab_settings_group',
 				'topbar_buddy_link_color' . $banner_id,
 				array(
-					'sanitize_callback' => array( $this, 'sanitize_color' ),
+					'type'              => 'string',
+					'sanitize_callback' => array( $this, 'sanitize_link_color' ),
 				)
 			);
+
 
 			\register_setting(
 				'eeab_settings_group',
@@ -980,7 +1195,8 @@ class Plugin {
 				'eeab_settings_group',
 				'eeab_close_button_expiration' . $banner_id,
 				array(
-					'sanitize_callback' => array( $this, 'sanitize_nohtml' ),
+					'type'              => 'string',
+                    'sanitize_callback' => array( $this, 'sanitize_days_or_session' ),
 				)
 			);
 
@@ -989,15 +1205,20 @@ class Plugin {
 				'eeab_settings_group',
 				'topbar_buddy_start_after_date' . $banner_id,
 				array(
-					'sanitize_callback' => array( $this, 'sanitize_nohtml' ),
-				)
-			);
+                    'type'              => 'string',
+					'sanitize_callback' => array( $this, 'sanitize_date' ),
+                    
+			    )
+			);	
 
-			\register_setting(
+
+
+		    \register_setting(
 				'eeab_settings_group',
 				'topbar_buddy_remove_after_date' . $banner_id,
 				array(
-					'sanitize_callback' => array( $this, 'sanitize_nohtml' ),
+					'type'              => 'string',
+				    'sanitize_callback' => array( $this, 'sanitize_date' ),
 				)
 			);
 
@@ -1005,7 +1226,8 @@ class Plugin {
 				'eeab_settings_group',
 				'topbar_buddy_insert_inside_element' . $banner_id,
 				array(
-					'sanitize_callback' => array( $this, 'sanitize_css' ),
+					'type'              => 'string',
+					'sanitize_callback' => array( $this, 'sanitize_selector' ),
 				)
 			);
 
@@ -1013,9 +1235,11 @@ class Plugin {
 				'eeab_settings_group',
 				'topbar_buddy_disabled_page_paths' . $banner_id,
 				array(
-					'sanitize_callback' => array( $this, 'sanitize_nohtml' ),
+					'type'              => 'string',
+					'sanitize_callback' => 'sanitize_text_field',
 				)
 			);
+
 		}
 	}
 
@@ -1238,6 +1462,10 @@ class Plugin {
 		if ( $value === null ) {
 			return '';
 		}
+		// Handle arrays (e.g., from checkbox groups)
+		if ( is_array( $value ) ) {
+			return implode( ',', array_map( 'sanitize_text_field', $value ) );
+		}
 		return \wp_filter_nohtml_kses( $value );
 	}
 
@@ -1263,8 +1491,12 @@ class Plugin {
 	 * @return string '1' if checked, empty string if not.
 	 */
 	public function sanitize_checkbox( $value ) {
-		return ! empty( $value ) ? '1' : '';
-	}
+    // Convert to 1 if truthy, else 0
+    return $value ? 1 : 0;
+    }
+
+
+	
 }
 
 

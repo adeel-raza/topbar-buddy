@@ -6,7 +6,7 @@
  * Plugin Name:       TopBar Buddy - Announcement Bar, Notification Bar and Sticky Alert Bar
  * Plugin URI:        https://wordpress.org/plugins/topbar-buddy/
  * Description:       Display announcement bars, notification bars, and sticky top banners in WordPress with scheduling, start/end dates, and page targeting
- * Version:           1.0.0
+ * Version:           1.1.0
  * Author:            eLearning evolve
  * Author URI:        https://elearningevolve.com/about/
  * License:           GPL-3.0+
@@ -17,7 +17,6 @@
  * Requires at least: 6.0
  * Tested up to:      6.9
  */
-
 // If this file is called directly, abort.
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -25,24 +24,23 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 defined( 'EEAB_MIN_WP' ) || define( 'EEAB_MIN_WP', '6.0' );
 defined( 'EEAB_MIN_PHP' ) || define( 'EEAB_MIN_PHP', '7.4' );
-defined( 'EEAB_VERSION' ) || define( 'EEAB_VERSION', '1.0.0' );
+defined( 'EEAB_VERSION' ) || define( 'EEAB_VERSION', '1.1.0' );
 defined( 'EEAB_PLUGIN_FILE' ) || define( 'EEAB_PLUGIN_FILE', __FILE__ );
 defined( 'EEAB_PLUGIN_DIR_PATH' ) || define( 'EEAB_PLUGIN_DIR_PATH', plugin_dir_path( __FILE__ ) );
 defined( 'EEAB_PLUGIN_DIR_URL' ) || define( 'EEAB_PLUGIN_DIR_URL', plugin_dir_url( __FILE__ ) );
 
-// Load PHP8 compat functions.
-require __DIR__ . '/compat.php';
+require EEAB_PLUGIN_DIR_PATH . 'compat.php';
 
-// Old versions of WordPress or PHP.
 if (
 	version_compare( $GLOBALS['wp_version'], EEAB_MIN_WP, '<' )
 	||
 	version_compare( phpversion(), EEAB_MIN_PHP, '<' )
 ) {
-	require __DIR__ . '/old-versions.php';
+	require EEAB_PLUGIN_DIR_PATH . 'old-versions.php';
 } else {
-	require __DIR__ . '/class.topbar-buddy.php';
+	require EEAB_PLUGIN_DIR_PATH . 'class.topbar-buddy.php';
 }
+
 
 // Initialize the plugin if requirements are met.
 if (

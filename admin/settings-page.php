@@ -43,7 +43,7 @@ $topbar_buddy_i = 1;
 	</div>
 
 	<!-- Settings Form -->
-	<form class="sb-settings-form" method="post" action="options.php">
+	<form class="sb-settings-form" method="post" action="<?php echo esc_url( \admin_url( 'options.php' ) ); ?>">
 		<?php \settings_fields( 'eeab_settings_group' ); ?>
 		
 		<!-- Top Save Changes Button -->

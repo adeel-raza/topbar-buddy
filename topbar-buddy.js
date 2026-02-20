@@ -27,8 +27,6 @@
             topbar_buddy_prepend_element,
             keep_site_custom_css,
             keep_site_custom_js,
-            wp_body_open,
-            wp_body_open_enabled,
         } = bannerParams;
 
         // Map eeab params to close_button variables for easier reading
@@ -74,7 +72,7 @@
             (pro_version_enabled && !disabled_on_current_page && !isDisabledByPagePath);
         const isSimpleBannerVisible = isTopbarBuddyTextSet && isSimpleBannerEnabledOnPage && !isBannerHidden;
         
-        // Check if banner already exists (created by PHP via wp_body_open)
+        // Banner may already exist (created by PHP)
         const existingBanner = document.getElementById(strings.id);
         
         // If banner should be hidden, remove or hide any existing banner

@@ -14,6 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+
 // Helper function for checked state.
 function topbar_buddy_is_checked( $option_value ) {
 	return $option_value ? 'checked ' : '';
@@ -307,26 +308,6 @@ $topbar_buddy_example_date = $topbar_buddy_current_date->format( $topbar_buddy_d
                             <?php esc_html_e( 'Inside header element', 'topbar-buddy' ); ?>
                         </label>
                     </fieldset>
-                    
-                    <div style="margin-top: 15px;">
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-                            <div>
-                                <label for="header_margin"><?php esc_html_e( 'Header Top Margin', 'topbar-buddy' ); ?></label>
-                                <input type="text" id="header_margin" name="header_margin" 
-                                       placeholder="40px"
-                                       value="<?php echo esc_attr( \get_option( 'header_margin' ) ); ?>" />
-                                <div class="sb-field-description"><?php esc_html_e( 'Adds space above your header when banner is visible', 'topbar-buddy' ); ?></div>
-                            </div>
-                            
-                            <div>
-                                <label for="header_padding"><?php esc_html_e( 'Header Top Padding', 'topbar-buddy' ); ?></label>
-                                <input type="text" id="header_padding" name="header_padding" 
-                                       placeholder="40px"
-                                       value="<?php echo esc_attr( \get_option( 'header_padding' ) ); ?>" />
-                                <div class="sb-field-description"><?php esc_html_e( 'Adds padding inside your header when banner is visible', 'topbar-buddy' ); ?></div>
-                            </div>
-                        </div>
-                    </div>
                 </td>
             </tr>
 
@@ -358,15 +339,18 @@ $topbar_buddy_example_date = $topbar_buddy_current_date->format( $topbar_buddy_d
                         <label><?php esc_html_e( 'Hide on Specific Pages', 'topbar-buddy' ); ?></label>
                         <div id="topbar_buddy_pro_disabled_pages<?php echo esc_attr( $banner_id ); ?>" style="max-height: 200px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; margin-top: 5px; background: #f9f9f9; border-radius: 4px;">
                             <?php
-                            $disabled_pages_array = array_filter( explode( ',', \get_option( 'disabled_pages_array' . $banner_id ) ) );
-                            $frontpage_id = \get_option( 'page_on_front' ) ?: 1;
+                            $disabled_pages_array = array_filter( explode( ',', \get_option( 'eeab_disabled_pages_array' . $banner_id ) ) );
+                            $frontpage_id = \get_option( 'page_on_front' );
                             
-                            // Front page checkbox.
-                            $checked = in_array( (string) $frontpage_id, $disabled_pages_array, true ) ? 'checked' : '';
+                            // Homepage checkbox - uses special "home" identifier.
+                            $checked = in_array( 'home', $disabled_pages_array, true ) ? 'checked' : '';
                             echo '<label style="display: block; margin-bottom: 5px;">';
-                            echo '<input type="checkbox" ' . esc_attr( $checked ) . ' value="' . esc_attr( $frontpage_id ) . '"> ';
+                            echo '<input type="checkbox" ' . esc_attr( $checked ) . ' value="home"> ';
                             echo '<strong>' . esc_html( \get_option( 'blogname' ) ) . '</strong> (' . esc_html__( 'Homepage', 'topbar-buddy' ) . ')';
                             echo '</label>';
+                            
+                            // If static front page exists, exclude it from the pages list.
+                            $frontpage_id = $frontpage_id ? (int) $frontpage_id : 0;
 
                             // Other pages.
                             // Get all pages and filter out front page in PHP to avoid performance issues with exclude parameter.
@@ -386,9 +370,9 @@ $topbar_buddy_example_date = $topbar_buddy_current_date->format( $topbar_buddy_d
                             }
                             ?>
                         </div>
-                        <input type="hidden" id="disabled_pages_array<?php echo esc_attr( $banner_id ); ?>" 
-                               name="disabled_pages_array<?php echo esc_attr( $banner_id ); ?>" 
-                               value="<?php echo esc_attr( \get_option( 'disabled_pages_array' . $banner_id ) ); ?>" />
+                        <input type="hidden" id="eeab_disabled_pages_array<?php echo esc_attr( $banner_id ); ?>" 
+                               name="eeab_disabled_pages_array<?php echo esc_attr( $banner_id ); ?>" 
+                               value="<?php echo esc_attr( \get_option( 'eeab_disabled_pages_array' . $banner_id ) ); ?>" />
                     </div>
                 </td>
             </tr>

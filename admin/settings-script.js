@@ -498,7 +498,7 @@
 						disabledPagesArray.push(input.value);
 					}
 				});
-				const hiddenInput = document.getElementById('disabled_pages_array' + banner_id);
+				const hiddenInput = document.getElementById('eeab_disabled_pages_array' + banner_id);
 				if (hiddenInput) {
 					hiddenInput.value = disabledPagesArray.join(',');
 				}

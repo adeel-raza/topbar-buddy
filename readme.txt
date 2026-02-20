@@ -4,7 +4,7 @@ Donate link: https://link.elearningevolve.com/self-pay
 Tags: banner, notification, announcement, alert, scheduling
 Requires at least: 6.0
 Tested up to: 6.9
-Stable tag: 1.0.0
+Stable tag: 1.1.0
 Requires PHP: 7.4
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
@@ -26,6 +26,7 @@ TopBar Buddy is a user-friendly WordPress plugin that lets you display beautiful
 * **Mobile Responsive** - Works perfectly on all devices
 
 **Perfect For:**
+
 * Sales and promotions
 * Important announcements
 * Maintenance notices
@@ -73,18 +74,22 @@ Yes, the banners are fully responsive and work on all devices.
 
 == Changelog ==
 
+= 1.1.0 =
+* Divi theme compatibility - Banner now displays correctly for all users when using the Divi theme
+* Theme fallback - For themes that do not support wp_body_open, the banner is output via wp_footer
+* Code cleanup - Removed unused script options and redundant code
+
 = 1.0.0 =
 * Initial release of TopBar Buddy
-* **Free Date Scheduling** - Schedule banners with start and end dates using WordPress site timezone (previously a Pro-only feature in original TopBar Buddy plugin)
-* **WYSIWYG Editor** - Rich text editor for banner content with full formatting support
-* **Page Exclusions** - Hide banners on specific pages, posts, or custom URLs (previously a Pro-only feature in original TopBar Buddy plugin)
-* **Server-Side Timezone Handling** - All date checks use WordPress timezone, ensuring consistent display for all users regardless of browser timezone
-* **Enhanced Save Buttons** - Centered, wider save buttons for better usability
-* **WordPress 6.8.2 Compatible** - Tested with latest WordPress version
+* Free Date Scheduling - Schedule banners with start and end dates
+* WYSIWYG Editor - Rich text editor for banner content
+* Page Exclusions - Hide banners on specific pages, posts, or custom URLs
+* Server-Side Timezone Handling - All date checks use WordPress timezone
 
 == Upgrade Notice ==
 
+= 1.1.0 =
+Divi theme compatibility and theme fallback so the banner shows for all users. Recommended upgrade.
+
 = 1.0.0 =
 Initial release of TopBar Buddy with free date scheduling feature.
-
-

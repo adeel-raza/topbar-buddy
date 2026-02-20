@@ -14,6 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+
 // Get WordPress timezone for display.
 $topbar_buddy_timezone_string = \get_option( 'timezone_string' );
 if ( ! empty( $topbar_buddy_timezone_string ) ) {
@@ -49,11 +50,11 @@ $banner_id = isset( $_GET['banner_id'] ) ? intval( $_GET['banner_id'] ) : 0;
 $topbar_buddy_message = '';
 
 // Handle form submissions
-if ( ! empty( $_POST ) && isset( $_POST['topbar_buddy_nonce'] ) ) {
-	// Verify nonce
-	if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['topbar_buddy_nonce'] ) ), 'topbar_buddy_banner_action' ) ) {
-		wp_die( esc_html__( 'Security check failed.', 'topbar-buddy' ) );
-	}
+$nonce = isset($_POST['topbar_buddy_nonce']) ? sanitize_text_field( wp_unslash($_POST['topbar_buddy_nonce']) ) : '';
+if ( ! wp_verify_nonce( $nonce, 'topbar_buddy_banner_action' ) ) {
+	wp_die( esc_html__( 'Security check failed.', 'topbar-buddy' ) );
+}
+
 
 	if ( isset( $_POST['create_banner'] ) || isset( $_POST['update_banner'] ) ) {
 		// Sanitize and prepare banner data
@@ -124,7 +125,7 @@ if ( ! empty( $_POST ) && isset( $_POST['topbar_buddy_nonce'] ) ) {
 			}
 		}
 	}
-}
+
 
 // Handle delete action
 if ( $topbar_buddy_action === 'delete' && $banner_id ) {
@@ -506,7 +507,7 @@ $topbar_buddy_banners = $topbar_buddy_banner_manager->get_banners();
 							<div style="margin-top: 15px;">
 								<label for="disabled_paths"><?php esc_html_e( 'Disabled URL Paths (comma-separated)', 'topbar-buddy' ); ?></label>
 								<input type="text" id="disabled_paths" name="disabled_paths" class="regular-text" 
-									   value="<?php echo $editing_banner ? esc_attr( $editing_banner->disabled_paths ) : ''; ?>">
+									   value="<?php echo $topbar_buddy_editing_banner ? esc_attr( $topbar_buddy_editing_banner->disabled_paths ) : ''; ?>">
 								<p class="description"><?php esc_html_e( 'URL paths where this banner should not appear (e.g., /contact, /about).', 'topbar-buddy' ); ?></p>
 							</div>
 						</td>

@@ -10,7 +10,6 @@
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
-
 add_action( 'admin_notices', 'eeab_version_notice' );
 
 /**

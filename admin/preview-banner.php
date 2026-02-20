@@ -15,6 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 
+
 ?>
 <div id="preview_banner_outer_container<?php echo esc_attr( $banner_id ); ?>"
      class="sb-preview-container topbar-buddy-settings-section">
@@ -32,10 +33,6 @@ if ( ! defined( 'ABSPATH' ) ) {
                 } else {
                     echo '<span>' . esc_html__( 'This is what your banner will look like with a', 'topbar-buddy' ) . ' <a href="/">' . esc_html__( 'link', 'topbar-buddy' ) . '</a>.</span>';
                 }
-                error_log( 'DEBUG: About to echo button' );
-                echo '<!-- BUTTON START -->';
-                echo '<button style="display:inline-block; color: white; font-size: 18px; background: red; padding: 5px 10px; margin-left: 10px;">✕ TEST</button>';
-                echo '<!-- BUTTON END -->';
                 ?>
             </div>
         </div>
